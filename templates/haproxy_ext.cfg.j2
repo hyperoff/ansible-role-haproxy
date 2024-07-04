@@ -1,8 +1,3 @@
-# SPDX-FileCopyrightText: 2020 Helmholtz Centre for Environmental Research (UFZ)
-# SPDX-FileCopyrightText: 2020 Helmholtz-Zentrum Dresden-Rossendorf (HZDR)
-#
-# SPDX-License-Identifier: Apache-2.0
-
 global
     # global settings here
     maxconn 50000
@@ -10,7 +5,7 @@ global
     user {{ haproxy_user }}
     group {{ haproxy_group }}
     daemon
-    stats socket {{ haproxy_socket }} user {{ haproxy_user }} group {{ haproxy_group }} mode 660 level admin
+    stats socket {{ haproxy_socket }} user {{ haproxy_user }} group {{ haproxy_group }} mode 660 level admin expose-fd listeners
     {% if haproxy_version is version('2.6', 'lt') %}
     nbproc {{ haproxy_nbproc }}
     {% endif %}
@@ -39,27 +34,52 @@ defaults
     mode http
     option httplog
 
+listen stats
+    bind  0.0.0.0:22002
+    mode  http
+    stats enable
+    stats uri /stats
+    stats refresh 5000
+
+listen admin
+    bind 0.0.0.0:22001
+    mode  http
+    stats enable
+    stats uri /admin
+    stats refresh 5000
+    stats auth {{ haproxy_stats_admin_user }}:{{ haproxy_stats_admin_user_password }}
+    stats admin if TRUE
+
 frontend haproxy_http
     mode http
     bind {{ haproxy_frontend_ip }}:80
-    redirect scheme https if !{ ssl_fc }
+    # CORS
+    http-response set-header Access-Control-Allow-Origin "*"
+    http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
+    http-response set-header Access-Control-Allow-Methods "GET, OPTIONS, POST, PUT"
+    http-response del-header server
+    http-response del-header vary
+    http-response del-header location
+
+    default_backend be
 
 frontend haproxy_https
     # a frontend that accepts requests from clients
     bind {{ haproxy_frontend_ip }}:443 ssl crt {{ haproxy_ssl_certificate_chain_file }} alpn h2,http1.1
-    default_backend gitlab
 
-frontend haproxy_stats
-    bind  *:9000 ssl crt {{ haproxy_ssl_certificate_chain_file }} alpn h2,http1.1
-    stats {{ haproxy_stats_enable }}
-    stats uri /stats
-    stats hide-version
-    stats auth {{ haproxy_stats_admin_user }}:{{ haproxy_stats_admin_user_password }}
-    stats admin if TRUE
+    # CORS
+    http-response set-header Access-Control-Allow-Origin "*"
+    http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
+    http-response set-header Access-Control-Allow-Methods "GET, OPTIONS, POST, PUT"
+    http-response del-header server
+    http-response del-header vary
+    http-response del-header location
 
-backend gitlab
+    default_backend be
+
+backend be
     # servers that fulfill the requests
-    balance roundrobin
+    balance leastconn
     option httpchk
     http-check send meth HEAD uri /api/health
     http-request add-header X-Forwarded-Proto https if { ssl_fc }
