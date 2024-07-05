@@ -22,6 +22,9 @@ global
     ssl-default-bind-options no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets
     ssl-dh-param-file {{ haproxy_ssl_dhparam_file }}
 
+    server-state-file /var/lib/haproxy/state
+    stats socket /var/lib/haproxy/stats
+
 defaults
     # defaults here
     retries 3
@@ -33,6 +36,7 @@ defaults
     log global
     mode http
     option httplog
+    load-server-state-from-file global
 
 listen stats
     bind  0.0.0.0:22002
