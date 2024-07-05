@@ -87,7 +87,7 @@ backend be
     option httpchk
     http-check send meth HEAD uri /api/health
     http-request add-header X-Forwarded-Proto https if { ssl_fc }
-    default-server check maxconn 20
+    default-server check maxconn 200
     {% for backend in haproxy_backends %}
     server {{ backend.backend_name }} {{ backend.backend_ip }}:{{ backend.backend_port | default(80, true) }} check
     {% endfor %}
