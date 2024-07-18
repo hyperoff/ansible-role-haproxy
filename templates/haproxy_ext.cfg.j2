@@ -59,8 +59,8 @@ frontend haproxy_http
     bind {{ haproxy_frontend_ip }}:80
     # CORS
     http-response set-header Access-Control-Allow-Origin "*"
-    http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
-    http-response set-header Access-Control-Allow-Methods "GET, OPTIONS, POST, PUT"
+    http-response set-header Access-Control-Allow-Headers "*"
+    http-response set-header Access-Control-Allow-Methods "*"
     http-response del-header server
     http-response del-header vary
     http-response del-header location
@@ -73,8 +73,8 @@ frontend haproxy_https
 
     # CORS
     http-response set-header Access-Control-Allow-Origin "*"
-    http-response set-header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
-    http-response set-header Access-Control-Allow-Methods "GET, OPTIONS, POST, PUT"
+    http-response set-header Access-Control-Allow-Headers "*"
+    http-response set-header Access-Control-Allow-Methods "*"
     http-response del-header server
     http-response del-header vary
     http-response del-header location
